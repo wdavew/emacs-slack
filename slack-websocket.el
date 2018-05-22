@@ -87,7 +87,10 @@
                      (slack-log (format "Websocket on-close: STATE: %s"
                                         (websocket-ready-state websocket))
                                 team :level 'debug)
-                     (slack-ws-set-reconnect-timer team))
+                     (if ws-force-close-slack
+                       (setq ws-force-close-slack nil)
+                       (slack-ws-set-reconnect-timer team)
+                       ))
            (on-error (_websocket type err)
                      (slack-log (format "Error on `websocket-open'. TYPE: %s, ERR: %s"
                                         type err)
@@ -119,7 +122,9 @@
               (slack-ws-cancel-ping-timer team)
               (slack-ws-cancel-ping-check-timers team)
               (when close-reconnection
-                (slack-ws-cancel-reconnect-timer team))
+                (progn
+                  (setq ws-force-close-slack t)
+                  (slack-ws-cancel-reconnect-timer team)))
               (with-slots (connected ws-conn last-pong) team
                 (when ws-conn
                   (websocket-close ws-conn)
